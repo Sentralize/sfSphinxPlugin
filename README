@@ -1,0 +1,136 @@
+# sfSphinxPlugin
+
+## Overview
+
+This plugin integrates [Sphinx search engine](http://www.sphinxsearch.com/)
+
+## Installation
+
+To install:
+
+    $ symfony plugin-install http://plugins.symfony-project.com/sfSphinxPlugin
+
+## Usage
+
+First of all, you should setup **Sphinx** on your machine.
+Please refer to [offical documentation](http://www.sphinxsearch.com/docs/manual-0.9.9.html).
+
+This is a very basic configuration file you can use for testing purpose
+(anyway, **it needs to be adapted** to your real data, see inline comments)
+
+    searchd
+    {
+      address      = 127.0.0.1
+      port         = 3312
+      read_timeout = 5
+      max_children = 30
+      max_matches  = 1000
+    }
+
+    source mydummysrc
+    {
+      type               = mysql
+      sql_host           = localhost
+      sql_user           = myuser # adapt!
+      sql_pass           = mypassword # adapt!
+      sql_db             = mydatabase # adapt!
+      sql_port           = 3306
+      sql_query          = SELECT id,name,UNIX_TIMESTAMP(created_at) created_at,updated_at FROM item # adapt!
+      sql_attr_timestamp = created_at
+      sql_attr_uint      = id
+    }
+
+    index mydummyindex
+    {
+      source       = mydummysrc
+      docinfo      = extern
+      min_word_len = 3
+      charset_type = utf-8
+    }
+
+Then you can test if everything is fine using the included file data/test.php from CLI.
+
+  php data/test.php "your query here"
+
+For a real usage, use this example in your action file:
+
+    [php]
+    public function executeSearch()
+    {
+      $this->query = $this->getRequestParameter('q');
+      $this->page = $this->getRequestParameter('p', 1);
+      $options = array(
+        'limit'   => 10,
+        'offset'  => ($this->page - 1) * 10,
+        'weights' => array(100, 1),
+        'sort'    => sfSphinxClient::SPH_SORT_EXTENDED,
+        'sortby'  => '@weight DESC',
+      );
+      $this->limit = $options['limit'];
+      if (!empty($this->query))
+      {
+        $<b style="color:black;background-color:#ffff66">sphinx</b> = new sfSphinxClient($options);
+        $this->res = $<b style="color:black;background-color:#ffff66">sphinx</b>->Query($this->query, $this->index);
+        $this->logMessage('{<b style="color:black;background-color:#ffff66">Sphinx</b>} search "' . $this->query . '" [' . $this->res['time'] . 's] found "' . $this->res['total_found'] . '" matches');
+        if ($this->res === false)
+        {
+          $this->message = 'Query failed: ' . $<b style="color:black;background-color:#ffff66">sphinx</b>->GetLastError();
+        }
+        if ($<b style="color:black;background-color:#ffff66">sphinx</b>->GetLastWarning())
+        {
+          $this->message = 'WARNING: ' . $<b style="color:black;background-color:#ffff66">sphinx</b>->GetLastWarning();
+        }
+      }
+    }
+
+
+and in your template (classes and methods to be adapted, see inline comments):
+
+    [php]
+    <form action="<?php echo url_for('/yourModule/search') ?>" method="get">
+    <?php echo label_for('q', 'search:') ?>
+    <?php echo input_tag('q', $query) ?>
+    <?php echo submit_tag() ?>
+    </form>
+
+    <?php if ($results['total_found'] == 0): ?>
+
+    No result matches your query
+    <?php else: ?>
+    <?php echo (($page - 1) * $limit) + 1 ?> - <?php echo ($page * (min($res['total_found'], $limit))) ?>
+    on a total of <?php echo $res['total_found'] ?>
+    (total pages: <?php echo floor($res['total_found'] / $limit) == 0 ? '1' : floor($res['total_found'] / $limit) ?>)
+    in <?php echo $res['time'] ?> seconds
+
+    <?php endif ?>
+    <?php if (!empty($message)): ?>
+
+    <?php echo $message ?>
+
+    <?php endif ?>
+    <?php $items = get_search_results($res, 'ItemPeer', ItemPeer::ID, 'doSelect') ?> <!-- adapt! -->
+    <ol start="<?php echo (($page - 1) * $limit) + 1 ?>">
+
+    <?php foreach ($items as $item): ?>
+      <li>
+        <?php echo link_to(highlight_search_result($item->getName(), $query), 'itemModule/itemShowAction?id=' . $item->getId()) ?> <!-- adapt! -->
+        <?php echo highlight_search_result($item->getDescription(), $query) ?> <!-- adapt! -->
+
+        <?php echo $item->getCreatedAt() ?> <!-- adapt! -->
+      </li>
+    <?php endforeach ?>
+    </ol>
+
+    <!-- you need to implement your pager here -->
+
+## Helper
+
+You can use the included SearchHelper static class to easily retrieve
+results corresponding to Sphinx found ids, and to highlight search words in results.
+Be aware: helper class requires PHP 5.2.3 as minimum version.
+
+
+## License
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
