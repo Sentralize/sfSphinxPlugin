@@ -11,11 +11,12 @@ class sfSphinxPager extends sfPager
     //$res = null;
     
 
-  public function __construct($class, $maxPerPage = 10)
+  public function __construct($class, $maxPerPage = 10, $sphinx_options = array())
   {
     parent::__construct($class, $maxPerPage);
 
     $this->tableName = constant($this->getClassPeer().'::TABLE_NAME');
+	// default options
     $options = array(
       'limit'   => $maxPerPage,
       'offset'  => 0,
@@ -24,6 +25,7 @@ class sfSphinxPager extends sfPager
       'sort'    => sfSphinxClient::SPH_SORT_EXTENDED,
       'sortby'  => '@weight DESC',
     );
+	$options = array_merge($options, $sphinx_options);
     $this->sphinx = new sfSphinxClient($options);
   }
  
