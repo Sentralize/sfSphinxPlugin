@@ -3,9 +3,10 @@
 class sfSphinxPager extends sfPager
 {
   protected
-    $peer_method_name       = 'retrieveByPKsJoinAll', // FIXME: change to retrieveByPKs
+    $peer_method_name       = 'retrieveByPKsJoinAll',
     $peer_count_method_name = 'doCount',
     $keyword = null,
+	// Hold a instance of sfSphinxClient
     $sphinx = null;
     //$res = null;
     
@@ -25,7 +26,10 @@ class sfSphinxPager extends sfPager
     );
     $this->sphinx = new sfSphinxClient($options);
   }
-
+ 
+ /**
+   * A function to be called after parameters have been set
+   */
   public function init()
   {   
     $hasMaxRecordLimit = ($this->getMaxRecordLimit() !== false);
@@ -66,9 +70,14 @@ class sfSphinxPager extends sfPager
     }
   }
 
+ /**
+   * Retrieve an object of a certain model with offset
+   * used internally by getCurrent()
+   * @param integer $offset
+   */
   protected function retrieveObject($offset)
   {
-    $this->sphinx->SetLimits($offset - 1, 1);
+    $this->sphinx->SetLimits($offset - 1, 1); // We only need one object
     
     $res = $this->sphinx->Query($this->keyword, $this->tableName);
     if ($res['total_found'])
@@ -88,17 +97,21 @@ class sfSphinxPager extends sfPager
     }
   }
 
+ /**
+   * returns an array of result on the given page
+   */
   public function getResults()
   {
     $res = $this->sphinx->Query($this->keyword, $this->tableName);
     if ($res['total_found'])
     {
+	  // First we need to get the Ids
       $ids = array();
       foreach ($res['matches'] as $match)
       {
         $ids[] = $match['id'];
       }
-  
+      // Then we retrieve the objects correspoding to the found Ids
       return call_user_func(array($this->getClassPeer(), $this->getPeerMethod()), $ids);
     }
     else
@@ -108,31 +121,49 @@ class sfSphinxPager extends sfPager
     
   }
 
+ /**
+   * Returns the peer method name.
+   */
   public function getPeerMethod()
   {
     return $this->peer_method_name;
   }
 
+ /**
+   * Set the peer method name.
+   */
   public function setPeerMethod($peer_method_name)
   {
     $this->peer_method_name = $peer_method_name;
   }
 
+ /**
+   * Returns the peer count method name. Default is 'doCount'
+   */
   public function getPeerCountMethod()
   {
     return $this->peer_count_method_name;
   }
 
+ /**
+   * Set the peer count method name.
+   */
   public function setPeerCountMethod($peer_count_method_name)
   {
     $this->peer_count_method_name = $peer_count_method_name;
   }
 
+ /**
+   * Returns the current class peer.
+   */
   public function getClassPeer()
   {
     return constant($this->class.'::PEER');
   }
-  
+
+ /**
+   * Set keyword.
+   */  
   public function setKeyword($k)
   {
     $this->keyword = $k;
