@@ -9,10 +9,10 @@ This plugin integrates [Sphinx search engine](http://www.sphinxsearch.com/)
 To install:
 
     $ symfony plugin-install http://plugins.symfony-project.com/sfSphinxPlugin
-	
+  
 or
 
-	$ symfony plugin:install sfSphinxPlugin
+    $ symfony plugin:install sfSphinxPlugin
 
 ## Usage
 
@@ -39,7 +39,8 @@ This is a very basic configuration file you can use for testing purpose
       sql_pass           = mypassword # adapt!
       sql_db             = mydatabase # adapt!
       sql_port           = 3306
-      sql_query          = SELECT id,name,UNIX_TIMESTAMP(created_at) created_at,updated_at FROM item # adapt!
+      sql_query          = SELECT id,name,UNIX_TIMESTAMP(created_at) created_at,updated_at \
+                           FROM item # adapt!
       sql_attr_timestamp = created_at
       sql_attr_uint      = id
     }
@@ -52,9 +53,9 @@ This is a very basic configuration file you can use for testing purpose
       charset_type = utf-8
     }
 
-Then you can test if everything is fine using the included file data/test.php from CLI.
+Then you can test if everything is fine using the included file `data/test.php` from CLI.
 
-  php data/test.php "your query here"
+    $ php data/test.php "your query here"
 
 For a real usage, use this example in your action file:
 
@@ -73,20 +74,19 @@ For a real usage, use this example in your action file:
       $this->limit = $options['limit'];
       if (!empty($this->query))
       {
-        $<b style="color:black;background-color:#ffff66">sphinx</b> = new sfSphinxClient($options);
-        $this->res = $<b style="color:black;background-color:#ffff66">sphinx</b>->Query($this->query, $this->index);
-        $this->logMessage('{<b style="color:black;background-color:#ffff66">Sphinx</b>} search "' . $this->query . '" [' . $this->res['time'] . 's] found "' . $this->res['total_found'] . '" matches');
+        $sphinx = new sfSphinxClient($options);
+        $this->res = $sphinx->Query($this->query, $this->index);
+        $this->logMessage('{sphinx} search "' . $this->query . '" [' . $this->res['time'] . 's] found "' . $this->res['total_found'] . '" matches');
         if ($this->res === false)
         {
-          $this->message = 'Query failed: ' . $<b style="color:black;background-color:#ffff66">sphinx</b>->GetLastError();
+          $this->message = 'Query failed: ' . $sphinx->GetLastError();
         }
-        if ($<b style="color:black;background-color:#ffff66">sphinx</b>->GetLastWarning())
+        if ($sphinx->GetLastWarning())
         {
-          $this->message = 'WARNING: ' . $<b style="color:black;background-color:#ffff66">sphinx</b>->GetLastWarning();
+          $this->message = 'WARNING: ' . $sphinx->GetLastWarning();
         }
       }
     }
-
 
 and in your template (classes and methods to be adapted, see inline comments):
 
@@ -129,44 +129,43 @@ and in your template (classes and methods to be adapted, see inline comments):
 
 ## Helper
 
-You can use the included SearchHelper static class to easily retrieve
+You can use the included `SearchHelper` static class to easily retrieve
 results corresponding to Sphinx found ids, and to highlight search words in results.
 Be aware: helper class requires PHP 5.2.3 as minimum version.
 
 ## sfSphinxPager
 
-For example, I want to have search engine to display books which have a specific keyword in either title, description or tag:
+For example, I want to have search engine to display books which have a specific
+keyword in either title, description or tag:
 
 [php]
 source book
 {
-	type					= mysql
+  type            = mysql
 
-	sql_host				= localhost
-	sql_user				= root
-	sql_pass				= *******
-	sql_db					= whatever
-	sql_port				= 3306	# optional, default is 3306
+  sql_host        = localhost
+  sql_user        = root
+  sql_pass        = *******
+  sql_db          = whatever
+  sql_port        = 3306  # optional, default is 3306
 
-	sql_query				= \
-		SELECT id, author_id, title, description, created_at, rate, view, tag \
-		FROM book
-	sql_attr_uint = author_id
+  sql_query       = SELECT id, author_id, title, description, created_at, rate, view, tag \
+                    FROM book
+  sql_attr_uint   = author_id
 
-	sql_query_info			= SELECT * FROM book WHERE id=$id
+  sql_query_info  = SELECT * FROM book WHERE id=$id
 }
-
 
 index book
 {
-	source					= book
-	path					= D:\Sphinx\data\book
-	docinfo					= extern
-	charset_type			= sbcs
+  source          = book
+  path            = path/to/data/book
+  docinfo         = extern
+  charset_type    = sbcs
 }
 
+The old usage with `sfPropelPager`
 
-The old usage with sfPropelPager
 [php]
 $pager = new sfPropelPager('Book', $booksPerPage);
 $pager->setCriteria($c);
@@ -174,7 +173,8 @@ $pager->setPage($page);
 $pager->setPeerMethod('doSelectJoinAll');
 $pager->init();
 
-And the new one with sfSphinxPager
+And the new one with `sfSphinxPager`
+
 [php]
 $pager = new sfSphinxPager('Book', $booksPerPage);
 $pager->setKeyword($keyword);
@@ -184,9 +184,10 @@ $pager->setPage($page);
 $pager->setPeerMethod('retrieveByPKsJoinAll');
 $pager->init();
 
-
-The difference with sfSphinxPager is that you cant use criteria and you have to use sfSphinxPager::setFilter() instead. It is a proxy to sfSphinxClient::setFilter() so I think you should read the sphinx php api a little bit.
-
+The difference with sfSphinxPager is that you can't use criteria and
+you have to use `sfSphinxPager::setFilter()` instead. It is a proxy
+to `sfSphinxClient::setFilter()`, so I think you should read the main
+class little bit.
 
 ## License
 

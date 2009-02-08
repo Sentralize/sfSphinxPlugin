@@ -16,23 +16,23 @@ class sfSphinxPager extends sfPager
 
     $this->tableName = constant($this->getClassPeer().'::TABLE_NAME');
     $options = array(
-	    'limit'   => $maxPerPage,
-	    'offset'  => 0,
-	  	'mode'    => sfSphinxClient::SPH_MATCH_EXTENDED,
-	    'weights' => array(100, 1, 10), // FIXME: change the weight
-	    'sort'    => sfSphinxClient::SPH_SORT_EXTENDED,
-	    'sortby'  => '@weight DESC',
-	  );
-	  $this->sphinx = new sfSphinxClient($options);
+      'limit'   => $maxPerPage,
+      'offset'  => 0,
+      'mode'    => sfSphinxClient::SPH_MATCH_EXTENDED,
+      'weights' => array(100, 1, 10), // FIXME: change the weight
+      'sort'    => sfSphinxClient::SPH_SORT_EXTENDED,
+      'sortby'  => '@weight DESC',
+    );
+    $this->sphinx = new sfSphinxClient($options);
   }
 
   public function init()
-  {	 
-	$hasMaxRecordLimit = ($this->getMaxRecordLimit() !== false);
+  {   
+    $hasMaxRecordLimit = ($this->getMaxRecordLimit() !== false);
     $maxRecordLimit = $this->getMaxRecordLimit();
 
     $res = $this->sphinx->Query($this->keyword, $this->tableName);
-    $count = $res["total_found"];
+    $count = $res['total_found'];
 
     $this->setNbResults($hasMaxRecordLimit ? min($count, $maxRecordLimit) : $count);
 
@@ -66,45 +66,45 @@ class sfSphinxPager extends sfPager
     }
   }
 
-	protected function retrieveObject($offset)
+  protected function retrieveObject($offset)
   {
-		$this->sphinx->SetLimits($offset - 1, 1);
-		
-  	$res = $this->sphinx->Query($this->keyword, $this->tableName);
-  	if ($res['total_found'])
-  	{
-  		$ids = array();
-		  foreach ($res['matches'] as $match)
-		  {
-		    $ids[] = $match['id'];
-		  }
-	
-	    $results = call_user_func(array($this->getClassPeer(), $this->getPeerMethod()), $ids);
-	    return is_array($results) && isset($results[0]) ? $results[0] : null;
-  	}
-  	else
-  	{
-  		return null;
-  	}
+    $this->sphinx->SetLimits($offset - 1, 1);
+    
+    $res = $this->sphinx->Query($this->keyword, $this->tableName);
+    if ($res['total_found'])
+    {
+      $ids = array();
+      foreach ($res['matches'] as $match)
+      {
+        $ids[] = $match['id'];
+      }
+  
+      $results = call_user_func(array($this->getClassPeer(), $this->getPeerMethod()), $ids);
+      return is_array($results) && isset($results[0]) ? $results[0] : null;
+    }
+    else
+    {
+      return null;
+    }
   }
 
   public function getResults()
   {
-  	$res = $this->sphinx->Query($this->keyword, $this->tableName);
-  	if ($res['total_found'])
-  	{
-  		$ids = array();
-		  foreach ($res['matches'] as $match)
-		  {
-		    $ids[] = $match['id'];
-		  }
-	
-	    return call_user_func(array($this->getClassPeer(), $this->getPeerMethod()), $ids);
-  	}
-  	else
-  	{
-  		return array();
-  	}
+    $res = $this->sphinx->Query($this->keyword, $this->tableName);
+    if ($res['total_found'])
+    {
+      $ids = array();
+      foreach ($res['matches'] as $match)
+      {
+        $ids[] = $match['id'];
+      }
+  
+      return call_user_func(array($this->getClassPeer(), $this->getPeerMethod()), $ids);
+    }
+    else
+    {
+      return array();
+    }
     
   }
 
@@ -133,7 +133,7 @@ class sfSphinxPager extends sfPager
     return constant($this->class.'::PEER');
   }
   
-	public function setKeyword($k)
+  public function setKeyword($k)
   {
     $this->keyword = $k;
   }
@@ -146,7 +146,7 @@ class sfSphinxPager extends sfPager
    */
   public function setSortMode($mode, $sortby = '')
   {
-  	$this->sphinx->SetSortMode($mode, $sortby);
+    $this->sphinx->SetSortMode($mode, $sortby);
   }
   
   /**
@@ -173,7 +173,7 @@ class sfSphinxPager extends sfPager
    */
   public function setFilterRange($attribute, $min, $max, $exclude = false)
   {
-  	$this->sphinx->SetFilterRange($attribute, $min, $max, $exclude);
+    $this->sphinx->SetFilterRange($attribute, $min, $max, $exclude);
   }
   
 }
