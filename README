@@ -9,6 +9,10 @@ This plugin integrates [Sphinx search engine](http://www.sphinxsearch.com/)
 To install:
 
     $ symfony plugin-install http://plugins.symfony-project.com/sfSphinxPlugin
+	
+or
+
+	$ symfony plugin:install sfSphinxPlugin
 
 ## Usage
 
@@ -128,6 +132,60 @@ and in your template (classes and methods to be adapted, see inline comments):
 You can use the included SearchHelper static class to easily retrieve
 results corresponding to Sphinx found ids, and to highlight search words in results.
 Be aware: helper class requires PHP 5.2.3 as minimum version.
+
+## sfSphinxPager
+
+For example, I want to have search engine to display books which have a specific keyword in either title, description or tag:
+
+[php]
+source book
+{
+	type					= mysql
+
+	sql_host				= localhost
+	sql_user				= root
+	sql_pass				= *******
+	sql_db					= whatever
+	sql_port				= 3306	# optional, default is 3306
+
+	sql_query				= \
+		SELECT id, author_id, title, description, created_at, rate, view, tag \
+		FROM book
+	sql_attr_uint = author_id
+
+	sql_query_info			= SELECT * FROM book WHERE id=$id
+}
+
+
+index book
+{
+	source					= book
+	path					= D:\Sphinx\data\book
+	docinfo					= extern
+	charset_type			= sbcs
+}
+
+
+The old usage with sfPropelPager
+[php]
+$pager = new sfPropelPager('Book', $booksPerPage);
+$pager->setCriteria($c);
+$pager->setPage($page);
+$pager->setPeerMethod('doSelectJoinAll');
+$pager->init();
+
+And the new one with sfSphinxPager
+[php]
+$pager = new sfSphinxPager('Book', $booksPerPage);
+$pager->setKeyword($keyword);
+$pager->setFilter(BookPeer::AUTHOR_ID, $userId);
+//$pager->setCriteria($c); no criteria, use sphinx filters instead
+$pager->setPage($page);
+$pager->setPeerMethod('retrieveByPKsJoinAll');
+$pager->init();
+
+
+The difference with sfSphinxPager is that you cant use criteria and you have to use sfSphinxPager::setFilter() instead. It is a proxy to sfSphinxClient::setFilter() so I think you should read the sphinx php api a little bit.
 
 
 ## License
