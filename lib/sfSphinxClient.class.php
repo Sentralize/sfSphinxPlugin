@@ -334,12 +334,12 @@ class sfSphinxClient
 		}
 		else
 		{
-			$fp = @fsockopen($this->_host, $this->_port, $errno, $errstr, $this->timeout);
+			$fp = @fsockopen($this->host, $this->port, $errno, $errstr, $this->timeout);
     }
 		if (!$fp)
 		{
 			$errstr = trim($errstr);
-			$this->error = "connection to {$this->_host}:{$this->_port} failed (errno=$errno, msg=$errstr)";
+			$this->error = "connection to {$this->host}:{$this->port} failed (errno=$errno, msg=$errstr)";
 			return false;
 		}
 
