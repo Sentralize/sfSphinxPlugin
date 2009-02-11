@@ -6,38 +6,34 @@ class sfSphinxPager extends sfPager
     $peer_method_name       = 'retrieveByPKsJoinAll',
     $peer_count_method_name = 'doCount',
     $keyword = null,
-	// Hold a instance of sfSphinxClient
     $sphinx = null;
-    //$res = null;
-    
 
-  public function __construct($class, $maxPerPage = 10, $sphinx_options = array())
+  /**
+   * Constructor
+   * @param object         $class
+   * @param integer        $maxPerPage
+   * @param sfSphinxClient $sphinx
+   */
+  public function __construct($class, $maxPerPage = 10, sfSphinxClient $sphinx)
   {
     parent::__construct($class, $maxPerPage);
-
-    $this->tableName = constant($this->getClassPeer().'::TABLE_NAME');
-	// default options
-    $options = array(
-      'limit'   => $maxPerPage,
-      'offset'  => 0,
-      'mode'    => sfSphinxClient::SPH_MATCH_EXTENDED,
-      'weights' => array(100, 1, 10), // FIXME: change the weight
-      'sort'    => sfSphinxClient::SPH_SORT_EXTENDED,
-      'sortby'  => '@weight DESC',
-    );
-	$options = array_merge($options, $sphinx_options);
-    $this->sphinx = new sfSphinxClient($options);
+    $this->sphinx = $sphinx;
   }
- 
- /**
+
+  /**
    * A function to be called after parameters have been set
    */
   public function init()
-  {   
+  {
     $hasMaxRecordLimit = ($this->getMaxRecordLimit() !== false);
     $maxRecordLimit = $this->getMaxRecordLimit();
 
-    $res = $this->sphinx->Query($this->keyword, $this->tableName);
+    $res = $this->sphinx->getRes();
+    if ($res === false)
+    {
+      return;
+    }
+
     $count = $res['total_found'];
 
     $this->setNbResults($hasMaxRecordLimit ? min($count, $maxRecordLimit) : $count);
@@ -72,7 +68,7 @@ class sfSphinxPager extends sfPager
     }
   }
 
- /**
+  /**
    * Retrieve an object of a certain model with offset
    * used internally by getCurrent()
    * @param integer $offset
@@ -80,8 +76,8 @@ class sfSphinxPager extends sfPager
   protected function retrieveObject($offset)
   {
     $this->sphinx->SetLimits($offset - 1, 1); // We only need one object
-    
-    $res = $this->sphinx->Query($this->keyword, $this->tableName);
+
+    $res = $this->sphinx->getRes();
     if ($res['total_found'])
     {
       $ids = array();
@@ -89,7 +85,7 @@ class sfSphinxPager extends sfPager
       {
         $ids[] = $match['id'];
       }
-  
+
       $results = call_user_func(array($this->getClassPeer(), $this->getPeerMethod()), $ids);
       return is_array($results) && isset($results[0]) ? $results[0] : null;
     }
@@ -99,15 +95,16 @@ class sfSphinxPager extends sfPager
     }
   }
 
- /**
-   * returns an array of result on the given page
+  /**
+   * Return an array of result on the given page
+   * @return array
    */
   public function getResults()
   {
-    $res = $this->sphinx->Query($this->keyword, $this->tableName);
+    $res = $this->sphinx->getRes();
     if ($res['total_found'])
     {
-	  // First we need to get the Ids
+      // First we need to get the Ids
       $ids = array();
       foreach ($res['matches'] as $match)
       {
@@ -120,93 +117,52 @@ class sfSphinxPager extends sfPager
     {
       return array();
     }
-    
+
   }
 
- /**
-   * Returns the peer method name.
+  /**
+   * Return the peer method name.
+   * @return string
    */
   public function getPeerMethod()
   {
     return $this->peer_method_name;
   }
 
- /**
+  /**
    * Set the peer method name.
+   * @param string $peer_method_name
    */
   public function setPeerMethod($peer_method_name)
   {
     $this->peer_method_name = $peer_method_name;
   }
 
- /**
-   * Returns the peer count method name. Default is 'doCount'
+  /**
+   * Return the peer count method name. Default is 'doCount'
+   * @return string
    */
   public function getPeerCountMethod()
   {
     return $this->peer_count_method_name;
   }
 
- /**
+  /**
    * Set the peer count method name.
+   * @param string $peer_count_method_name
    */
   public function setPeerCountMethod($peer_count_method_name)
   {
     $this->peer_count_method_name = $peer_count_method_name;
   }
 
- /**
-   * Returns the current class peer.
+  /**
+   * Return the current class peer.
+   * @return string
    */
   public function getClassPeer()
   {
     return constant($this->class.'::PEER');
   }
 
- /**
-   * Set keyword.
-   */  
-  public function setKeyword($k)
-  {
-    $this->keyword = $k;
-  }
-  
-  /**
-   * A proxy for Sphinx::SetSortMode()
-   * set sort mode
-   * @param integer $mode
-   * @param string  $sortby
-   */
-  public function setSortMode($mode, $sortby = '')
-  {
-    $this->sphinx->SetSortMode($mode, $sortby);
-  }
-  
-  /**
-   * A proxy for Sphinx::SetFilter()
-   * set values set filter
-   * only match records where $attribute value is in given set
-   * @param string  $attribute
-   * @param array   $values
-   * @param boolean $exclude
-   */
-  public function setFilter($attribute, $values, $exclude = false)
-  {
-    $this->sphinx->SetFilter($attribute, $values, $exclude);
-  }
-  
-  /**
-   * set range filter
-   * only match those records where $attribute column value is beetwen $min and $max
-   * (including $min and $max)
-   * @param string  $attribute
-   * @param integer $min
-   * @param integer $max
-   * @param boolean $exclude
-   */
-  public function setFilterRange($attribute, $min, $max, $exclude = false)
-  {
-    $this->sphinx->SetFilterRange($attribute, $min, $max, $exclude);
-  }
-  
 }

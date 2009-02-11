@@ -114,6 +114,7 @@ class sfSphinxClient
   private   $reqs;          // requests array for multi-query
   private   $error;         // last error message
   private   $warning;       // last warning message
+  private   $res;           // result from RunQueries()
 
   /**
    * create a new client object, filling defaults for options not passed
@@ -162,6 +163,7 @@ class sfSphinxClient
     $this->reqs    = array();
     $this->error   = '';
     $this->warning = '';
+    $this->res     = false;
   }
 
   /**
@@ -546,7 +548,7 @@ class sfSphinxClient
   }
 
   /**
-   *
+   * add a query to $reqs
    * @param  string  $query
    * @param  string  $index
    * @param  string  $comment
@@ -666,18 +668,28 @@ class sfSphinxClient
     $results = $this->RunQueries();
     if (!is_array($results))
     {
-      return false; // probably network error; error message should be already filled
+      // probably network error; error message should be already filled
+      return $this->res = false;
     }
     $this->error = $results[0]['error'];
     $this->warning = $results[0]['warning'];
     if ($results[0]['status'] == self::SEARCHD_ERROR)
     {
-      return false;
+      return $this->res = false;
     }
     else
     {
-      return $results[0];
+      return $this->res = $results[0];
     }
+  }
+
+  /**
+   * get query results
+   * @return array  See Query() method
+   */
+  public function getRes()
+  {
+    return $this->res;
   }
 
   /**

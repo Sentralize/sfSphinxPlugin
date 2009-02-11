@@ -9,7 +9,7 @@ This plugin integrates [Sphinx search engine](http://www.sphinxsearch.com/)
 To install:
 
     $ symfony plugin-install http://plugins.symfony-project.com/sfSphinxPlugin
-  
+
 or
 
     $ symfony plugin:install sfSphinxPlugin
@@ -71,123 +71,70 @@ For a real usage, use this example in your action file:
         'sort'    => sfSphinxClient::SPH_SORT_EXTENDED,
         'sortby'  => '@weight DESC',
       );
-      $this->limit = $options['limit'];
       if (!empty($this->query))
       {
-        $sphinx = new sfSphinxClient($options);
-        $this->res = $sphinx->Query($this->query, $this->index);
-        $this->logMessage('{sphinx} search "' . $this->query . '" [' . $this->res['time'] . 's] found "' . $this->res['total_found'] . '" matches');
-        if ($this->res === false)
-        {
-          $this->message = 'Query failed: ' . $sphinx->GetLastError();
-        }
-        if ($sphinx->GetLastWarning())
-        {
-          $this->message = 'WARNING: ' . $sphinx->GetLastWarning();
-        }
+        $this->sphinx = new sfSphinxClient($options);
+        $res = $this->sphinx->Query($this->query, 'mydummyindex');
+        $this->pager = new sfSphinxPager('Item', $options['limit'], $this->sphinx);
+        $this->pager->setPage($this->page);
+        $this->pager->setPeerMethod('retrieveByPKs');
+        $this->pager->init();
+        $this->logMessage('Sphinx search "' . $this->query . '" [' . $res['time'] .
+                          's] found ' . $this->pager->getNbResults() . ' matches');
       }
     }
 
-and in your template (classes and methods to be adapted, see inline comments):
+and in your template (classes and methods **to be adapted**, see inline comments):
 
     [php]
+    <?php use_helper('Search') ?>
     <form action="<?php echo url_for('/yourModule/search') ?>" method="get">
     <?php echo label_for('q', 'search:') ?>
     <?php echo input_tag('q', $query) ?>
     <?php echo submit_tag() ?>
     </form>
 
-    <?php if ($results['total_found'] == 0): ?>
+    <?php if (empty($query)): ?>
+    <?php return ?>
+    <?php endif ?>
 
+    <?php $res = $pager->getResults() ?>
+    <?php if ($sphinx->getLastError()): ?>
+    Error: <?php echo $sphinx->getLastError() ?>
+    <?php elseif (empty($res)): ?>
     No result matches your query
     <?php else: ?>
-    <?php echo (($page - 1) * $limit) + 1 ?> - <?php echo ($page * (min($res['total_found'], $limit))) ?>
-    on a total of <?php echo $res['total_found'] ?>
-    (total pages: <?php echo floor($res['total_found'] / $limit) == 0 ? '1' : floor($res['total_found'] / $limit) ?>)
-    in <?php echo $res['time'] ?> seconds
-
+    <?php if ($sphinx->getLastWarning()): ?>
+    Warning: <?php echo $sphinx->getLastWarning() ?>
     <?php endif ?>
-    <?php if (!empty($message)): ?>
-
-    <?php echo $message ?>
-
-    <?php endif ?>
-    <?php $items = get_search_results($res, 'ItemPeer', ItemPeer::ID, 'doSelect') ?> <!-- adapt! -->
-    <ol start="<?php echo (($page - 1) * $limit) + 1 ?>">
-
-    <?php foreach ($items as $item): ?>
+    <ol start="<?php echo $pager->getFirstIndice() ?>">
+    <?php foreach ($res as $item): ?>
       <li>
         <?php echo link_to(highlight_search_result($item->getName(), $query), 'itemModule/itemShowAction?id=' . $item->getId()) ?> <!-- adapt! -->
         <?php echo highlight_search_result($item->getDescription(), $query) ?> <!-- adapt! -->
-
         <?php echo $item->getCreatedAt() ?> <!-- adapt! -->
       </li>
     <?php endforeach ?>
     </ol>
+    <?php endif ?>
 
-    <!-- you need to implement your pager here -->
+    <?php if ($pager->haveToPaginate()): ?>
+      <?php echo link_to('&laquo;', 'yourModule/search?q=' . $query . '&p=' . $pager->getFirstPage()) ?>
+      <?php echo link_to('&lt;', 'yourModule/search?q=' . $query . '&p=' . $pager->getPreviousPage()) ?>
+      <?php $links = $pager->getLinks()?>
+      <?php foreach ($links as $page): ?>
+        <?php echo ($page == $pager->getPage()) ? $page : link_to($page, 'yourModule/search?q=' . $query . '&p=' . $page) ?>
+      <?php endforeach ?>
+      <?php echo link_to('&gt;', 'yourModule/search?q=' . $query . '&p=' . $pager->getNextPage()) ?>
+      <?php echo link_to('&raquo;', 'yourModule/search?q=' . $query . '&p=' . $pager->getLastPage()) ?>
+    <?php endif ?>
 
 ## Helper
 
 You can use the included `SearchHelper` static class to easily retrieve
-results corresponding to Sphinx found ids, and to highlight search words in results.
+results corresponding to Sphinx found ids, and to highlight search words
+in results.
 Be aware: helper class requires PHP 5.2.3 as minimum version.
-
-## sfSphinxPager
-
-For example, I want to have search engine to display books which have a specific
-keyword in either title, description or tag:
-
-[php]
-source book
-{
-  type            = mysql
-
-  sql_host        = localhost
-  sql_user        = root
-  sql_pass        = *******
-  sql_db          = whatever
-  sql_port        = 3306  # optional, default is 3306
-
-  sql_query       = SELECT id, author_id, title, description, created_at, rate, view, tag \
-                    FROM book
-  sql_attr_uint   = author_id
-
-  sql_query_info  = SELECT * FROM book WHERE id=$id
-}
-
-index book
-{
-  source          = book
-  path            = path/to/data/book
-  docinfo         = extern
-  charset_type    = sbcs
-}
-
-The old usage with `sfPropelPager`
-
-[php]
-$pager = new sfPropelPager('Book', $booksPerPage);
-$pager->setCriteria($c);
-$pager->setPage($page);
-$pager->setPeerMethod('doSelectJoinAll');
-$pager->init();
-
-And the new one with `sfSphinxPager`
-
-[php]
-$pager = new sfSphinxPager('Book', $booksPerPage);
-$pager->setKeyword($keyword);
-$pager->setFilter(BookPeer::AUTHOR_ID, $userId);
-//$pager->setCriteria($c); no criteria, use sphinx filters instead
-$pager->setPage($page);
-$pager->setPeerMethod('retrieveByPKsJoinAll');
-$pager->init();
-
-The difference with sfSphinxPager is that you can't use criteria and
-you have to use `sfSphinxPager::setFilter()` instead. It is a proxy
-to `sfSphinxClient::setFilter()`, so I think you should read the main
-class little bit.
 
 ## License
 
