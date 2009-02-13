@@ -292,6 +292,15 @@ class sfSphinxClient
   }
 
   /**
+   * check if there's an error or not
+   * @return string
+   */
+  public function isError()
+  {
+    return !empty($this->error);
+  }
+
+  /**
    * get last error message
    * @return string
    */
@@ -323,6 +332,7 @@ class sfSphinxClient
   /**
    * connect to searchd server
    * @return resource
+   * @throws Exception
    */
   protected function Connect()
   {
@@ -340,7 +350,7 @@ class sfSphinxClient
 		{
 			$errstr = trim($errstr);
 			$this->error = "connection to {$this->host}:{$this->port} failed (errno=$errno, msg=$errstr)";
-			return false;
+      throw new Exception($this->error);
 		}
 
 		// check version
@@ -350,7 +360,7 @@ class sfSphinxClient
 		{
 			fclose($fp);
 			$this->error = "expected searchd protocol version 1+, got version '$v'";
-			return false;
+      throw new Exception($this->error);
 		}
 
 		// all ok, send my version
@@ -363,6 +373,7 @@ class sfSphinxClient
    * @param  resource $fp
    * @param  integer  $client_ver
    * @return string
+   * @throws Exception
    */
   protected function GetResponse($fp, $client_ver)
   {
@@ -388,24 +399,24 @@ class sfSphinxClient
       $this->error = $len
         ? "failed to read searchd response (status=$status, ver=$ver, len=$len, read=$read)"
         : 'received zero-sized searchd response';
-      return false;
+      throw new Exception($this->error);
     }
 
     // check status
     if ($status == self::SEARCHD_ERROR)
     {
       $this->error = 'searchd error: ' . substr($response, 4);
-      return false;
+      throw new Exception($this->error);
     }
     if ($status == self::SEARCHD_RETRY)
     {
       $this->error = 'temporary searchd error: ' . substr($response, 4);
-      return false;
+      throw new Exception($this->error);
     }
     if ($status != self::SEARCHD_OK)
     {
       $this->error = "unknown status code '$status'";
-      return false;
+      throw new Exception($this->error);
     }
 
     // check version
@@ -661,6 +672,7 @@ class sfSphinxClient
    *                            search time
    *                          'words'
    *                            hash which maps query terms (stemmed!) to ('docs', 'hits') hash
+   * @throws Exception
    */
   public function Query($query, $index = '*', $comment = '')
   {
@@ -669,17 +681,18 @@ class sfSphinxClient
     if (!is_array($results))
     {
       // probably network error; error message should be already filled
-      return $this->res = false;
+      throw new Exception($this->error);
     }
     $this->error = $results[0]['error'];
     $this->warning = $results[0]['warning'];
     if ($results[0]['status'] == self::SEARCHD_ERROR)
     {
-      return $this->res = false;
+      throw new Exception($this->error);
     }
     else
     {
-      return $this->res = $results[0];
+      $this->res = $results[0];
+      return $this->res;
     }
   }
 
@@ -701,7 +714,7 @@ class sfSphinxClient
     if (empty($this->reqs))
     {
       $this->error = 'no queries defined, issue AddQuery() first';
-      return false;
+      throw new Exception($this->error);
     }
 
     // mbstring workaround
@@ -710,7 +723,7 @@ class sfSphinxClient
     if (!($fp = $this->Connect()))
     {
       $this->MBPop();
-      return false;
+      throw new Exception($this->error);
     }
 
     //// send query, get response
@@ -725,7 +738,7 @@ class sfSphinxClient
     if (!($response = $this->GetResponse($fp, self::VER_COMMAND_SEARCH)))
     {
       $this->MBPop();
-      return false;
+      throw new Exception($this->error);
     }
 
     $this->reqs = array();
@@ -933,7 +946,8 @@ class sfSphinxClient
    *                          max excerpt size in symbols (codepoints), default is 256
    *                        'around'
    *                          how much words to highlight around each match, default is 5
-   * @return array        strings of excerpts, or false in case of failure
+   * @return array        strings of excerpts
+   * @throws Exception
    */
   public function BuildExcerpts($docs, $index, $words, $opts = array())
   {
@@ -942,7 +956,7 @@ class sfSphinxClient
     if (!($fp = $this->Connect()))
     {
       $this->MBPop();
-      return false;
+      throw new Exception($this->error);
     }
 
     //// fixup options
@@ -992,7 +1006,7 @@ class sfSphinxClient
     if (!($response = $this->GetResponse($fp, self::VER_COMMAND_EXCERPT)))
     {
       $this->MBPop();
-      return false;
+      throw new Exception($this->error);
     }
 
     //// parse response
@@ -1009,7 +1023,7 @@ class sfSphinxClient
       {
         $this->error = 'incomplete reply';
         $this->MBPop();
-        return false;
+        throw new Exception($this->error);
       }
       $res[] = substr($response, $pos, $len);
       $pos += $len;
@@ -1025,6 +1039,7 @@ class sfSphinxClient
    * @param  string  $index
    * @param  boolean $hits
    * @return array
+   * @throws Exception
    */
   public function BuildKeywords($query, $index, $hits)
   {
@@ -1033,7 +1048,7 @@ class sfSphinxClient
     if (!($fp = $this->Connect()))
     {
       $this->MBPop();
-      return false;
+      throw new Exception($this->error);
     }
 
     //// build request
@@ -1051,7 +1066,7 @@ class sfSphinxClient
     if (!($response = $this->_GetResponse($fp, self::VER_COMMAND_KEYWORDS)))
     {
       $this->MBPop();
-      return false;
+      throw new Exception($this->error);
     }
 
     //// parse response
@@ -1087,7 +1102,7 @@ class sfSphinxClient
       {
         $this->error = 'incomplete reply';
         $this->MBPop();
-        return false;
+        throw new Exception($this->error);
       }
     }
 

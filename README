@@ -99,9 +99,7 @@ and in your template (classes and methods **to be adapted**, see inline comments
     <?php endif ?>
 
     <?php $res = $pager->getResults() ?>
-    <?php if ($sphinx->getLastError()): ?>
-    Error: <?php echo $sphinx->getLastError() ?>
-    <?php elseif (empty($res)): ?>
+    <?php if (empty($res)): ?>
     No result matches your query
     <?php else: ?>
     <?php if ($sphinx->getLastWarning()): ?>
