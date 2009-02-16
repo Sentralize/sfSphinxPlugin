@@ -349,7 +349,7 @@ class sfSphinxClient
 		if (!$fp)
 		{
 			$errstr = trim($errstr);
-			$this->error = "connection to {$this->host}:{$this->port} failed (errno=$errno, msg=$errstr)";
+			$this->error = "Sphinx connection to {$this->host}:{$this->port} failed (errno=$errno, msg=$errstr)";
       throw new Exception($this->error);
 		}
 
