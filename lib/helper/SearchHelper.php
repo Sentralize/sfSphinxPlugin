@@ -7,6 +7,7 @@
  * @param  string $id_field    id field used in Sphinx, e.g. "id" (for ItemPeer::ID)
  * @param  string $peer_method method name of $peer_class, e.g. "doSelect"
  * @return array               array of objects returned by peer class
+ * @deprecated  Please use sfSphinxPager insted
  */
 function get_search_results($results, $peer_class, $id_field, $peer_method)
 {
@@ -74,6 +75,7 @@ function highlight_search_result($haystack, $needle, $tag = 'b')
  * @param  integer $page  current page (default is first page)
  * @param  integer $delta number of page links to display in pager
  * @return string
+ * @deprecated  Please use sfSphinxPager insted
  */
 function search_pager($uri, $query, $found, $page = 1, $delta = 10)
 {

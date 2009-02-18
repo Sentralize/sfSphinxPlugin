@@ -1,12 +1,17 @@
 <?php
+/**
+ * sfSphinx pager class
+ * @package sfSphinxPlugin
+ * @author  Hung Dao <hungdao@mahshelf.com>
+ */
 
 class sfSphinxPager extends sfPager
 {
   protected
-    $peer_method_name       = 'retrieveByPKsJoinAll',
+    $peer_method_name       = 'retrieveByPKs',
     $peer_count_method_name = 'doCount',
-    $keyword = null,
-    $sphinx = null;
+    $keyword                = null,
+    $sphinx                 = null;
 
   /**
    * Constructor
@@ -71,7 +76,8 @@ class sfSphinxPager extends sfPager
   /**
    * Retrieve an object of a certain model with offset
    * used internally by getCurrent()
-   * @param integer $offset
+   * @param  integer $offset
+   * @return object
    */
   protected function retrieveObject($offset)
   {

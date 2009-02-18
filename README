@@ -26,9 +26,6 @@ This is a very basic configuration file you can use for testing purpose
     {
       address      = 127.0.0.1
       port         = 3312
-      read_timeout = 5
-      max_children = 30
-      max_matches  = 1000
     }
 
     source mydummysrc
@@ -38,7 +35,6 @@ This is a very basic configuration file you can use for testing purpose
       sql_user           = myuser # adapt!
       sql_pass           = mypassword # adapt!
       sql_db             = mydatabase # adapt!
-      sql_port           = 3306
       sql_query          = SELECT id,name,UNIX_TIMESTAMP(created_at) created_at,updated_at \
                            FROM item # adapt!
       sql_attr_timestamp = created_at
@@ -48,7 +44,6 @@ This is a very basic configuration file you can use for testing purpose
     index mydummyindex
     {
       source       = mydummysrc
-      docinfo      = extern
       min_word_len = 3
       charset_type = utf-8
     }
@@ -129,10 +124,12 @@ and in your template (classes and methods **to be adapted**, see inline comments
 
 ## Helper
 
-You can use the included `SearchHelper` static class to easily retrieve
-results corresponding to Sphinx found ids, and to highlight search words
-in results.
-Be aware: helper class requires PHP 5.2.3 as minimum version.
+You can use the included `SearchHelper` static class to highlight search words
+in results, with `highlight_search_result()` helper.
+The `get_search_results()` and `search_pager()` helpers are now deprecated:
+you could use them to retrieve results corresponding to Sphinx found ids and to
+manually paginate, but it's better to use sfSphinxPager class.
+Be aware: `get_search_results()` requires PHP 5.2.3 as minimum version.
 
 ## License
 
