@@ -16,7 +16,7 @@ or
 
 ## Usage
 
-First of all, you should setup **Sphinx** on your machine.
+First of all, you should setup **Sphinx** on your machine. [How-to](http://komunitasweb.com/2009/03/sphinx-search-introduction/)
 Please refer to [offical documentation](http://www.sphinxsearch.com/docs/manual-0.9.9.html).
 
 This is a very basic configuration file you can use for testing purpose
