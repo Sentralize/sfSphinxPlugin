@@ -128,8 +128,10 @@ You can use the included `SearchHelper` static class to highlight search words
 in results, with `highlight_search_result()` helper.
 The `get_search_results()` and `search_pager()` helpers are now deprecated:
 you could use them to retrieve results corresponding to Sphinx found ids and to
-manually paginate, but it's better to use sfSphinxPager class.
+manually paginate, but it's better to use `sfSphinxPropelPager` class.
 Be aware: `get_search_results()` requires PHP 5.2.3 as minimum version.
+Since version 0.0.7, if you prefer Doctrine, you can use `sfSphinxDoctrinePager` class
+instead of `sfSphinxPropelPager`.
 
 ## License
 
