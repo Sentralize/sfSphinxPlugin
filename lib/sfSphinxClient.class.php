@@ -39,12 +39,13 @@ class sfSphinxClient
   const SEARCHD_WARNING = 3;
 
   // known match modes
-  const SPH_MATCH_ALL      = 0;
-  const SPH_MATCH_ANY      = 1;
-  const SPH_MATCH_PHRASE   = 2;
-  const SPH_MATCH_BOOLEAN  = 3;
-  const SPH_MATCH_EXTENDED = 4;
-  const SPH_MATCH_FULLSCAN = 5;
+  const SPH_MATCH_ALL       = 0;
+  const SPH_MATCH_ANY       = 1;
+  const SPH_MATCH_PHRASE    = 2;
+  const SPH_MATCH_BOOLEAN   = 3;
+  const SPH_MATCH_EXTENDED  = 4;
+  const SPH_MATCH_FULLSCAN  = 5;
+  const SPH_MATCH_EXTENDED2 = 6;  // extended engine V2 (temporary)
 
   // known ranking modes (ext2 only)
   const SPH_RANK_PROXIMITY_BM25 = 0; // default mode, phrase proximity major factor and BM25 minor one
@@ -286,8 +287,8 @@ class sfSphinxClient
    */
   private function EscapeString($string)
   {
-		$from = array('(', ')', '|', '-', '!', '@', '~', '"', '&', '/' );
-		$to   = array('\(', '\)', '\|', '\-', '\!', '\@', '\~', '\"', '\&', '\/');
+    $from = array('(', ')', '|', '-', '!', '@', '~', '"', '&', '/' );
+    $to   = array('\(', '\)', '\|', '\-', '\!', '\@', '\~', '\"', '\&', '\/');
     return str_replace($from, $to, $string);
   }
 
@@ -336,36 +337,36 @@ class sfSphinxClient
    */
   protected function Connect()
   {
-		$errno = 0;
-		$errstr = '';
-		if ($this->timeout <= 0)
-		{
-			$fp = @fsockopen($this->host, $this->port, $errno, $errstr);
-		}
-		else
-		{
-			$fp = @fsockopen($this->host, $this->port, $errno, $errstr, $this->timeout);
+    $errno = 0;
+    $errstr = '';
+    if ($this->timeout <= 0)
+    {
+      $fp = @fsockopen($this->host, $this->port, $errno, $errstr);
     }
-		if (!$fp)
-		{
-			$errstr = trim($errstr);
-			$this->error = "Sphinx connection to {$this->host}:{$this->port} failed (errno=$errno, msg=$errstr)";
+    else
+    {
+      $fp = @fsockopen($this->host, $this->port, $errno, $errstr, $this->timeout);
+    }
+    if (!$fp)
+    {
+      $errstr = trim($errstr);
+      $this->error = "Sphinx connection to {$this->host}:{$this->port} failed (errno=$errno, msg=$errstr)";
       throw new Exception($this->error);
-		}
+    }
 
-		// check version
-		list(, $v) = unpack("N*", fread($fp, 4));
-		$v = (int) $v;
-		if ($v < 1)
-		{
-			fclose($fp);
-			$this->error = "expected searchd protocol version 1+, got version '$v'";
+    // check version
+    list(, $v) = unpack("N*", fread($fp, 4));
+    $v = (int) $v;
+    if ($v < 1)
+    {
+      fclose($fp);
+      $this->error = "expected searchd protocol version 1+, got version '$v'";
       throw new Exception($this->error);
-		}
+    }
 
-		// all ok, send my version
-		fwrite($fp, pack("N", 1));
-		return $fp;
+    // all ok, send my version
+    fwrite($fp, pack("N", 1));
+    return $fp;
   }
 
   /**
