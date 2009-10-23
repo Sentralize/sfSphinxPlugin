@@ -157,20 +157,13 @@ class sfSphinxDoctrinePager extends sfPager
       }
       // Then we retrieve the objects correspoding to the found Ids
       $query = clone $this->getQuery();
-      $result = new Doctrine_Collection(Doctrine::getTable($query->getRootAlias()));
-      foreach ($ids as $id)
-      {
-         $record = $query->where($this->pk_column. ' = ?', $id)->execute()->getFirst();
-         $result->add($record);
-      }
+      $result = $query->whereIn($this->pk_column, $ids)->execute(); 
       return $result ? $result : array();
     }
     else
     {
       return array();
     }
-
   }
-
 }
 
