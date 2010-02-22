@@ -1083,11 +1083,11 @@ class sfSphinxClient
           $req .= pack('N', count($filter['values']));
           foreach ($filter['values'] as $value)
           {
-            $req .= sphPackI64($value);
+            $req .= $this->sphPackI64($value);
           }
           break;
         case self::SPH_FILTER_RANGE:
-          $req .= sphPackI64($filter['min']) . sphPackI64($filter['max']);
+          $req .= $this->sphPackI64($filter['min']) . $this->sphPackI64($filter['max']);
           break;
         case self::SPH_FILTER_FLOATRANGE:
           $req .= $this->packFloat($filter['min']) . $this->packFloat($filter['max']);
@@ -1142,14 +1142,14 @@ class sfSphinxClient
       $req .= pack('NN', $entry['type'], count($entry['values']));
       foreach ($entry['values'] as $id => $val)
       {
-        $req .= sphPackU64($id);
+        $req .= $this->sphPackU64($id);
         switch ($entry['type'])
         {
           case self::SPH_ATTR_FLOAT:
             $req .= $this->PackFloat($val);
             break;
           case self::SPH_ATTR_BIGINT:
-            $req .= sphPackI64($val);
+            $req .= $this->sphPackI64($val);
             break;
           default:
             $req .= pack('N', $val);
