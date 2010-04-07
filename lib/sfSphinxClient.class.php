@@ -3,7 +3,7 @@
  * This file is derived from PHP API of the sfSphinx package.
  * (c) 2001-2008 Andrew Aksyonoff
  * (c) 2007      Rick Olson <rick@napalmriot.com>
- * (c) 2008-2009 Massimiliano Arione <garakkio@gmail.com>
+ * (c) 2008-2010 Massimiliano Arione <garakkio@gmail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -168,7 +168,7 @@ class sfSphinxClient
       'mbenc'         => '',
       'arrayresult'   => true,
       'timeout'       => 0,
- );
+    );
     $available_options = array_keys($default_options);
     $new_options = array_merge($default_options, $options);
     foreach ($new_options as $k => $v)
@@ -234,7 +234,7 @@ class sfSphinxClient
     $lo = abs((float) substr($v, $p));
     $hi = abs((float) substr($v, 0, $p));
 
-    $m = $lo + $hi*1316134912.0; // (10 ^ 13) % (1 << 32) = 1316134912
+    $m = $lo + $hi * 1316134912.0; // (10 ^ 13) % (1 << 32) = 1316134912
     $q = floor($m / 4294967296.0);
     $l = $m - ($q * 4294967296.0);
     $h = $hi * 2328.0 + $q; // (10 ^ 13) / (1 << 32) = 2328
@@ -251,6 +251,7 @@ class sfSphinxClient
         $l = 4294967296.0 - $l;
       }
     }
+
     return pack('NN', $h, $l);
   }
 
@@ -267,7 +268,7 @@ class sfSphinxClient
       // x64, int
       if (is_int($v))
       {
-        return pack('NN', $v>>32, $v&0xFFFFFFFF);
+        return pack('NN', $v >> 32, $v&0xFFFFFFFF);
       }
 
       // x64, bcmath
@@ -374,11 +375,11 @@ class sfSphinxClient
       {
         return $lo;
       }
-      return sprintf('%u', $lo );
+      return sprintf('%u', $lo);
     }
 
-    $hi = sprintf('%u', $hi );
-    $lo = sprintf('%u', $lo );
+    $hi = sprintf('%u', $hi);
+    $lo = sprintf('%u', $lo);
 
     // x32, bcmath
     if (function_exists('bcmul'))
@@ -397,17 +398,20 @@ class sfSphinxClient
     $l = $m - $mq * 10000000.0;
     $h = $q * 4294967296.0 + $r * 429.0 + $mq;
 
-    $h = sprintf('%.0f', $h );
-    $l = sprintf('%07.0f', $l );
+    $h = sprintf('%.0f', $h);
+    $l = sprintf('%07.0f', $l);
     if ($h == '0')
     {
       return sprintf('%.0f', (float) $l);
     }
+
     return $h . $l;
   }
 
   /**
    * unpack 64-bit signed
+   * @param  mixed  $v integer/float
+   * @return string
    */
   private function sphUnpackI64($v)
   {
@@ -483,6 +487,7 @@ class sfSphinxClient
     {
       return $neg . sprintf('%.0f', (float) $l);
     }
+
     return $neg . $h . $l;
   }
 
@@ -531,6 +536,7 @@ class sfSphinxClient
   {
     $from = array('\\', '(',')','|','-','!','@','~','"','&', '/', '^', '$', '=');
     $to   = array('\\\\', '\(','\)','\|','\-','\!','\@','\~','\"', '\&', '\/', '\^', '\$', '\=');
+
     return str_replace($from, $to, $string);
   }
 
@@ -573,7 +579,7 @@ class sfSphinxClient
 
   /**
    * set searchd server
-   * @param string $host
+   * @param string  $host
    * @param integer $port
    */
   public function SetServer($host, $port)
@@ -602,6 +608,12 @@ class sfSphinxClient
     $this->timeout = $timeout;
   }
 
+  /**
+   * @param  resource $handle
+   * @param  string   $data
+   * @param  integer  $length
+   * @return boolean
+   */
   protected function Send($handle, $data, $length)
   {
     if (feof($handle) || fwrite($handle, $data, $length) !== $length)
@@ -610,6 +622,7 @@ class sfSphinxClient
       $this->connerror = true;
       return false;
     }
+
     return true;
   }
 
@@ -642,7 +655,7 @@ class sfSphinxClient
 
     if ($this->timeout <= 0)
     {
-      $fp = @fsock($host, $port, $errno, $errstr);
+      $fp = @fsockopen($host, $port, $errno, $errstr);
     }
     else
     {
@@ -663,6 +676,7 @@ class sfSphinxClient
       $errstr = trim($errstr);
       $this->error = "connection to $location failed (errno=$errno, msg=$errstr)";
       $this->connerror = true;
+
       return false;
     }
 
@@ -869,7 +883,7 @@ class sfSphinxClient
         'type'    => self::SPH_FILTER_VALUES,
         'attr'    => $attribute,
         'exclude' => $exclude,
-        'values'  => $values
+        'values'  => $values,
       );
     }
   }
@@ -890,7 +904,7 @@ class sfSphinxClient
       'attr'   => $attribute,
       'exclude'=> $exclude,
       'min'    => $min,
-      'max'    => $max
+      'max'    => $max,
     );
   }
 
@@ -909,7 +923,7 @@ class sfSphinxClient
       'attr'    => $attribute,
       'exclude' => $exclude,
       'min'     => $min,
-      'max'     => $max
+      'max'     => $max,
     );
   }
 
@@ -928,7 +942,7 @@ class sfSphinxClient
       'attrlat'  => $attrlat,
       'attrlong' => $attrlong,
       'lat'      => $lat,
-      'long'     => $long
+      'long'     => $long,
     );
   }
 
@@ -1004,7 +1018,7 @@ class sfSphinxClient
     $this->overrides[$attrname] = array(
       'attr'   => $attrname,
       'type'   => $attrtype,
-      'values' => $values
+      'values' => $values,
     );
   }
 
@@ -1032,8 +1046,8 @@ class sfSphinxClient
   public function ResetGroupBy()
   {
     $this->groupby = '';
-    $this->groupfunc  = self::SPH_GROUPBY_DAY;
-    $this->groupsort  = '@group desc';
+    $this->groupfunc = self::SPH_GROUPBY_DAY;
+    $this->groupsort = '@group desc';
     $this->groupdistinct = '';
   }
 
@@ -1165,6 +1179,7 @@ class sfSphinxClient
 
     // store request to requests array
     $this->reqs[] = $req;
+
     return count($this->reqs) - 1;
   }
 
@@ -1247,7 +1262,7 @@ class sfSphinxClient
     // add header
     $req = pack('nnNN', self::SEARCHD_COMMAND_SEARCH, self::VER_COMMAND_SEARCH, $len, $nreqs) . $req;
 
-    if (!($this->Send($fp, $req, $len + 8)) || !($response = $this->GetResponse($fp, VER_COMMAND_SEARCH)))
+    if (!($this->Send($fp, $req, $len + 8)) || !($response = $this->GetResponse($fp, self::VER_COMMAND_SEARCH)))
     {
       $this->MBPop();
       throw new Exception($this->error);
@@ -1265,7 +1280,6 @@ class sfSphinxClient
    */
   protected function ParseSearchResponse($response, $nreqs)
   {
-
     //// parse response
 
     $p = 0; // current position
@@ -1455,6 +1469,7 @@ class sfSphinxClient
     }
 
     $this->MBPop();
+
     return $results;
   }
 
@@ -1491,15 +1506,15 @@ class sfSphinxClient
 
     //// fixup options
 
-    if (!isset($opts['before_match']))      $opts['before_match'] = '<b>';
-    if (!isset($opts['after_match']))       $opts['after_match'] = '</b>';
-    if (!isset($opts['chunk_separator']))   $opts['chunk_separator'] = ' ... ';
-    if (!isset($opts['limit']))             $opts['limit'] = 256;
-    if (!isset($opts['around']))            $opts['around'] = 5;
-    if (!isset($opts['exact_phrase']))      $opts['exact_phrase'] = false;
-    if (!isset($opts['single_passage']))    $opts['single_passage'] = false;
-    if (!isset($opts['use_boundaries']))    $opts['use_boundaries'] = false;
-    if (!isset($opts['weight_order']))      $opts['weight_order'] = false;
+    if (!isset($opts['before_match']))     $opts['before_match'] = '<b>';
+    if (!isset($opts['after_match']))      $opts['after_match'] = '</b>';
+    if (!isset($opts['chunk_separator']))  $opts['chunk_separator'] = ' ... ';
+    if (!isset($opts['limit']))            $opts['limit'] = 256;
+    if (!isset($opts['around']))           $opts['around'] = 5;
+    if (!isset($opts['exact_phrase']))     $opts['exact_phrase'] = false;
+    if (!isset($opts['single_passage']))   $opts['single_passage'] = false;
+    if (!isset($opts['use_boundaries']))   $opts['use_boundaries'] = false;
+    if (!isset($opts['weight_order']))     $opts['weight_order'] = false;
 
     //// build request
 
@@ -1559,6 +1574,7 @@ class sfSphinxClient
     }
 
     $this->MBPop();
+
     return $res;
   }
 
@@ -1635,6 +1651,7 @@ class sfSphinxClient
     }
 
     $this->MBPop();
+
     return $res;
   }
 
@@ -1728,6 +1745,7 @@ class sfSphinxClient
     }
 
     $this->socket = $fp;
+
     return true;
   }
 
@@ -1786,6 +1804,7 @@ class sfSphinxClient
     }
 
     $this->MBPop();
+
     return $res;
   }
 
