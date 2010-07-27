@@ -1,7 +1,7 @@
 <?php
 /**
  * This file is derived from PHP API of the sfSphinx package.
- * (c) 2001-2008 Andrew Aksyonoff
+ * (c) 2001-2010 Andrew Aksyonoff
  * (c) 2007      Rick Olson <rick@napalmriot.com>
  * (c) 2008-2010 Massimiliano Arione <garakkio@gmail.com>
  *
@@ -21,21 +21,23 @@ class sfSphinxClient
 {
 
   // known searchd commands
-  const SEARCHD_COMMAND_SEARCH   = 0;
-  const SEARCHD_COMMAND_EXCERPT  = 1;
-  const SEARCHD_COMMAND_UPDATE   = 2;
-  const SEARCHD_COMMAND_KEYWORDS = 3;
-  const SEARCHD_COMMAND_PERSIST  = 4;
-  const SEARCHD_COMMAND_STATUS   = 5;
-  const SEARCHD_COMMAND_QUERY    = 6;
+  const SEARCHD_COMMAND_SEARCH     = 0;
+  const SEARCHD_COMMAND_EXCERPT    = 1;
+  const SEARCHD_COMMAND_UPDATE     = 2;
+  const SEARCHD_COMMAND_KEYWORDS   = 3;
+  const SEARCHD_COMMAND_PERSIST    = 4;
+  const SEARCHD_COMMAND_STATUS     = 5;
+  const SEARCHD_COMMAND_QUERY      = 6;
+  const SEARCHD_COMMAND_FLUSHATTRS = 7;
 
   // current client-side command implementation versions
-  const VER_COMMAND_SEARCH   = 0x116;
-  const VER_COMMAND_EXCERPT  = 0x100;
-  const VER_COMMAND_UPDATE   = 0x102;
-  const VER_COMMAND_KEYWORDS = 0x100;
-  const VER_COMMAND_STATUS   = 0x100;
-  const VER_COMMAND_QUERY    = 0x100;
+  const VER_COMMAND_SEARCH     = 0x117;
+  const VER_COMMAND_EXCERPT    = 0x102;
+  const VER_COMMAND_UPDATE     = 0x102;
+  const VER_COMMAND_KEYWORDS   = 0x100;
+  const VER_COMMAND_STATUS     = 0x100;
+  const VER_COMMAND_QUERY      = 0x100;
+  const VER_COMMAND_FLUSHATTRS = 0x100;
 
   // known searchd status codes
   const SEARCHD_OK      = 0;
@@ -61,6 +63,8 @@ class sfSphinxClient
   const SPH_RANK_PROXIMITY      = 4;
   const SPH_RANK_MATCHANY       = 5;
   const SPH_RANK_FIELDMASK      = 6;
+  const SPH_RANK_SPH04          = 7;
+  const SPH_RANK_TOTAL          = 8;
 
   // known sort modes
   const SPH_SORT_RELEVANCE     = 0;
@@ -82,6 +86,7 @@ class sfSphinxClient
   const SPH_ATTR_BOOL      = 4;
   const SPH_ATTR_FLOAT     = 5;
   const SPH_ATTR_BIGINT    = 6;
+  const SPH_ATTR_STRING    = 7;
   const SPH_ATTR_MULTI     = 0x40000000;
 
   // known grouping functions
@@ -92,43 +97,45 @@ class sfSphinxClient
   const SPH_GROUPBY_ATTR     = 4;
   const SPH_GROUPBY_ATTRPAIR = 5;
 
-  protected $host;          // searchd host (default is 'localhost')
-  protected $port;          // searchd port (default is 3312)
-  protected $offset;        // how many records to seek from result-set start (default is 0)
-  protected $limit;         // how many records to return from result-set (default is 20)
-  protected $mode;          // query matching mode (default is self::SPH_MATCH_ALL)
-  protected $weights;       // per-field weights (default is 1 for all fields)
-  protected $sort;          // match sorting mode (default is self::SPH_SORT_RELEVANCE)
-  protected $sortby;        // attribute to sort by (defualt is '')
-  protected $min_id;        // min ID to match (default is 0)
-  protected $max_id;        // max ID to match (default is UINT_MAX)
-  protected $filters;       // search filters
-  protected $min;           // attribute name to min-value hash (for range filters)
-  protected $max;           // attribute name to max-value hash (for range filters)
-  protected $filter;        // attribute name to values set hash (for values-set filters)
-  protected $groupby;       // group-by attribute name (default is self::SPH_GROUPBY_DAY)
-  protected $groupfunc;     // function to pre-process group-by attribute value with
-  protected $groupsort;     // group-by sorting clause (to sort groups in result set with)
-  protected $groupdistinct; // group-by count-distinct attribute
-  protected $maxmatches;    // max matches to retrieve (default is 1000)
-  protected $cutoff;        // cutoff to stop searching at (default is 0)
-  protected $retrycount;    // distributed retries count
-  protected $retrydelay;    // distributed retries delay
-  protected $anchor;        // geographical anchor point
-  protected $indexweights;  // per-index weights
-  protected $ranker;        // ranking mode (default is self::SPH_RANK_PROXIMITY_BM25)
-  protected $maxquerytime;  // max query time, milliseconds (default is 0, do not limit)
-  protected $fieldweights;  // per-field-name weights
-  protected $overrides;     // per-query attribute values overrides
-  protected $select;        // select-list (attributes or expressions, with optional aliases)
-  protected $mbenc;         // stored mbstring encoding
-  protected $arrayresult;   // whether $result['matches'] should be a hash or an array
-  protected $timeout;       // connect timeout
-  private   $reqs;          // requests array for multi-query
-  private   $error;         // last error message
-  private   $warning;       // last warning message
-  private   $conerror;      // connection error vs remote error flag
-  private   $res;           // result from RunQueries()
+  protected
+    $host,          // searchd host (default is 'localhost')
+    $port,          // searchd port (default is 3312)
+    $offset,        // how many records to seek from result-set start (default is 0)
+    $limit,         // how many records to return from result-set (default is 20)
+    $mode,          // query matching mode (default is self::SPH_MATCH_ALL)
+    $weights,       // per-field weights (default is 1 for all fields)
+    $sort,          // match sorting mode (default is self::SPH_SORT_RELEVANCE)
+    $sortby,        // attribute to sort by (defualt is '')
+    $min_id,        // min ID to match (default is 0)
+    $max_id,        // max ID to match (default is UINT_MAX)
+    $filters,       // search filters
+    $min,           // attribute name to min-value hash (for range filters)
+    $max,           // attribute name to max-value hash (for range filters)
+    $filter,        // attribute name to values set hash (for values-set filters)
+    $groupby,       // group-by attribute name (default is self::SPH_GROUPBY_DAY)
+    $groupfunc,     // function to pre-process group-by attribute value with
+    $groupsort,     // group-by sorting clause (to sort groups in result set with)
+    $groupdistinct, // group-by count-distinct attribute
+    $maxmatches,    // max matches to retrieve (default is 1000)
+    $cutoff,        // cutoff to stop searching at (default is 0)
+    $retrycount,    // distributed retries count
+    $retrydelay,    // distributed retries delay
+    $anchor,        // geographical anchor point
+    $indexweights,  // per-index weights
+    $ranker,        // ranking mode (default is self::SPH_RANK_PROXIMITY_BM25)
+    $maxquerytime,  // max query time, milliseconds (default is 0, do not limit)
+    $fieldweights,  // per-field-name weights
+    $overrides,     // per-query attribute values overrides
+    $select,        // select-list (attributes or expressions, with optional aliases)
+    $mbenc,         // stored mbstring encoding
+    $arrayresult,   // whether $result['matches'] should be a hash or an array
+    $timeout;       // connect timeout
+  private
+    $reqs,          // requests array for multi-query
+    $error,         // last error message
+    $warning,       // last warning message
+    $conerror,      // connection error vs remote error flag
+    $res;           // result from RunQueries()
 
   /**
    * create a new client object, filling defaults for options not passed
@@ -272,7 +279,7 @@ class sfSphinxClient
       }
 
       // x64, bcmath
-      if ( function_exists('bcmul'))
+      if (function_exists('bcmul'))
       {
         $h = bcdiv($v, 4294967296, 0);
         $l = bcmod($v, 4294967296);
@@ -288,7 +295,7 @@ class sfSphinxClient
       $l = $m % 4294967296;
       $h = $hi * 2328 + (int) ($m / 4294967296);
 
-      return pack('NN', $h, $l );
+      return pack('NN', $h, $l);
     }
 
     // x32, int
@@ -330,11 +337,11 @@ class sfSphinxClient
 
     if (PHP_INT_SIZE >= 8)
     {
-      if ( $hi < 0 )
+      if ($hi < 0)
       {
         $hi += (1 << 32); // because php 5.2.2 to 5.2.5 is totally fucked up again
       }
-      if ( $lo < 0 )
+      if ($lo < 0)
       {
         $lo += (1 << 32);
       }
@@ -418,13 +425,13 @@ class sfSphinxClient
     list($hi, $lo) = array_values(unpack('N*N*', $v));
 
     // x64
-    if ( PHP_INT_SIZE>=8 )
+    if (PHP_INT_SIZE >= 8)
     {
-      if ( $hi<0 )
+      if ($hi < 0)
       {
         $hi += (1 << 32); // because php 5.2.2 to 5.2.5 is totally fucked up again
       }
-      if ( $lo<0 )
+      if ($lo < 0)
       {
         $lo += (1 << 32);
       }
@@ -461,11 +468,11 @@ class sfSphinxClient
       $neg = '-';
     }
 
-    $hi = sprintf('%u', $hi );
-    $lo = sprintf('%u', $lo );
+    $hi = sprintf('%u', $hi);
+    $lo = sprintf('%u', $lo);
 
     // x32, bcmath
-    if ( function_exists('bcmul') )
+    if (function_exists('bcmul'))
     {
       return $neg . bcadd(bcadd($lo, bcmul($hi, '4294967296')), $c);
     }
@@ -481,8 +488,8 @@ class sfSphinxClient
     $l = $m - $mq * 10000000.0 + $c;
     $h = $q * 4294967296.0 + $r * 429.0 + $mq;
 
-    $h = sprintf('%.0f', $h );
-    $l = sprintf('%07.0f', $l );
+    $h = sprintf('%.0f', $h);
+    $l = sprintf('%07.0f', $l);
     if ($h == '0')
     {
       return $neg . sprintf('%.0f', (float) $l);
@@ -664,7 +671,7 @@ class sfSphinxClient
 
     if (!$fp)
     {
-      if($this->path)
+      if ($this->path)
       {
         $location = $this->path;
       }
@@ -1432,6 +1439,11 @@ class sfSphinxClient
               $attrvals[$attr][] = sprintf('%u', $val);
             }
           }
+          elseif ($type == self::SPH_ATTR_STRING)
+          {
+            $attrvals[$attr] = substr($response, $p, $val);
+            $p += $val;
+          }
           else
           {
             $attrvals[$attr] = sprintf('%u', $val);
@@ -1510,20 +1522,32 @@ class sfSphinxClient
     if (!isset($opts['after_match']))      $opts['after_match'] = '</b>';
     if (!isset($opts['chunk_separator']))  $opts['chunk_separator'] = ' ... ';
     if (!isset($opts['limit']))            $opts['limit'] = 256;
+    if (!isset($opts['limit_passages']))   $opts['limit_passages'] = 0;
+    if (!isset($opts['limit_words']))      $opts['limit_words'] = 0;
     if (!isset($opts['around']))           $opts['around'] = 5;
     if (!isset($opts['exact_phrase']))     $opts['exact_phrase'] = false;
     if (!isset($opts['single_passage']))   $opts['single_passage'] = false;
     if (!isset($opts['use_boundaries']))   $opts['use_boundaries'] = false;
     if (!isset($opts['weight_order']))     $opts['weight_order'] = false;
+    if (!isset($opts['query_mode']))       $opts['query_mode'] = false;
+    if (!isset($opts['force_all_words']))  $opts['force_all_words'] = false;
+    if (!isset($opts['start_passage_id'])) $opts['start_passage_id'] = 1;
+    if (!isset($opts['load_files']))       $opts['load_files'] = false;
+    if (!isset($opts['html_strip_mode']))  $opts['html_strip_mode'] = 'index';
+    if (!isset($opts['allow_empty']))      $opts['allow_empty'] = false;
 
     //// build request
 
-    // v.1.0 req
+    // v.1.2 req
     $flags = 1; // remove spaces
     if ($opts['exact_phrase'])    $flags |= 2;
     if ($opts['single_passage'])  $flags |= 4;
     if ($opts['use_boundaries'])  $flags |= 8;
     if ($opts['weight_order'])    $flags |= 16;
+    if ($opts['query_mode'])      $flags |= 32;
+    if ($opts['force_all_words']) $flags |= 64;
+    if ($opts['load_files'])      $flags |= 128;
+    if ($opts['allow_empty'])     $flags |= 256;
     $req = pack('NN', 0, $flags); // mode=0, flags=$flags
     $req .= pack('N', strlen($index)) . $index; // req index
     $req .= pack('N', strlen($words)) . $words; // req words
@@ -1666,6 +1690,7 @@ class sfSphinxClient
   public function UpdateAttributes($index, array $attrs, array $values, $mva = false)
   {
     // build request
+    $this->MBPush();
     $req = pack('N', strlen($index)) . $index;
 
     $req .= pack('N', count($attrs));
@@ -1692,9 +1717,6 @@ class sfSphinxClient
       }
     }
 
-    // mbstring workaround
-    $this->MBPush();
-
     // connect, send query, get response
     if (!($fp = $this->Connect()))
     {
@@ -1707,16 +1729,20 @@ class sfSphinxClient
     $req = pack('nnN', self::SEARCHD_COMMAND_UPDATE, self::VER_COMMAND_UPDATE, $len) . $req;
     if (!$this->Send($fp, $req, $len + 8))
     {
+      $this->MBPop();
       return -1;
     }
 
     if (!($response = $this->GetResponse($fp, self::VER_COMMAND_UPDATE)))
     {
+      $this->MBPop();
       return -1;
     }
 
     // parse response
     list(, $updated) = unpack('N*', substr($response, 0, 4));
+
+    $this->MBPop();
 
     return $updated;
   }
@@ -1738,7 +1764,7 @@ class sfSphinxClient
     }
 
     // command, command version = 0, body length = 4, body = 1
-    $req = pack('nnNN', SEARCHD_COMMAND_PERSIST, 0, 4, 1);
+    $req = pack('nnNN', self::SEARCHD_COMMAND_PERSIST, 0, 4, 1);
     if (!$this->Send ($fp, $req, 12))
     {
       return false;
@@ -1780,8 +1806,8 @@ class sfSphinxClient
       return false;
     }
 
-    $req = pack('nnNN', SEARCHD_COMMAND_STATUS, VER_COMMAND_STATUS, 4, 1); // len=4, body=1
-    if (!($this->Send ($fp, $req, 12)) || !($response = $this->GetResponse ($fp, VER_COMMAND_STATUS)))
+    $req = pack('nnNN', self::SEARCHD_COMMAND_STATUS, self::VER_COMMAND_STATUS, 4, 1); // len=4, body=1
+    if (!($this->Send($fp, $req, 12)) || !($response = $this->GetResponse($fp, self::VER_COMMAND_STATUS)))
     {
       $this->MBPop();
       return false;
@@ -1789,7 +1815,8 @@ class sfSphinxClient
 
     $res = substr($response, 4); // just ignore length, error handling, etc
     $p = 0;
-    list($rows, $cols) = array_values (unpack ('N*N*', substr ($response, $p, 8))); $p += 8;
+    list($rows, $cols) = array_values(unpack('N*N*', substr($response, $p, 8)));
+    $p += 8;
 
     $res = array();
     for ($i = 0; $i < $rows; $i ++)
@@ -1806,6 +1833,41 @@ class sfSphinxClient
     $this->MBPop();
 
     return $res;
+  }
+
+  /**
+   * flush
+   * @return string
+   */
+  function FlushAttributes()
+  {
+    $this->MBPush();
+    if (!($fp = $this->Connect()))
+    {
+      $this->MBPop();
+      return -1;
+    }
+
+    $req = pack('nnN', self::SEARCHD_COMMAND_FLUSHATTRS, self::VER_COMMAND_FLUSHATTRS, 0); // len=0
+    if (!($this->Send($fp, $req, 8)) || !($response = $this->GetResponse($fp, self::VER_COMMAND_FLUSHATTRS)))
+    {
+      $this->MBPop();
+      return -1;
+    }
+
+    $tag = -1;
+    if (strlen($response) == 4)
+    {
+      list(, $tag) = unpack('N*', $response);
+    }
+    else
+    {
+      $this->error = 'unexpected response length';
+    }
+
+    $this->MBPop();
+
+    return $tag;
   }
 
 }
